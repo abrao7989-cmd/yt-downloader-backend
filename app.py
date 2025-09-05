@@ -3,9 +3,8 @@ from flask_cors import CORS
 import os, requests
 
 app = Flask(__name__)
-CORS(app)  # Enable cross-origin requests
+CORS(app)
 
-# Load API key
 RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
 
 @app.route("/", methods=["GET"])
@@ -22,6 +21,12 @@ def download():
         if not video_url:
             return jsonify({"error": "Missing url parameter"}), 400
 
+        # Normalize format
+        if "mp3" in format_type.lower():
+            format_type = "mp3"
+        else:
+            format_type = "mp4"
+
         url = "https://instagram-tiktok-youtube-downloader.p.rapidapi.com/get-info"
         querystring = {"url": video_url, "format": format_type}
 
@@ -32,6 +37,10 @@ def download():
 
         response = requests.get(url, headers=headers, params=querystring)
         data = response.json()
+
+        # If API failed, show error
+        if "error" in data or response.status_code != 200:
+            return jsonify({"status": "error", "data": data}), 500
 
         return jsonify({"status": "success", "data": data})
 
