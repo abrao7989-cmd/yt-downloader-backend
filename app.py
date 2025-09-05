@@ -1,36 +1,41 @@
 from flask import Flask, request, jsonify
 import requests
+import os
 
 app = Flask(__name__)
 
-RAPIDAPI_KEY = "your-rapidapi-key"  # Replace with your actual key
-RAPIDAPI_HOST = "instagram-tiktok-youtube-downloader.p.rapidapi.com"
+# Load API key from environment variable
+RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
+
+@app.route("/")
+def home():
+    return {"status": "ok", "message": "YT Downloader Backend is running"}
 
 @app.route("/download", methods=["GET"])
 def download():
-    url = request.args.get("url")
-    format_type = request.args.get("format", "mp4")  # mp4, mp3, etc.
+    video_url = request.args.get("url")
+    format_type = request.args.get("format", "mp4")
 
-    if not url:
-        return jsonify({"error": "URL is required"}), 400
+    if not video_url:
+        return jsonify({"error": "Missing url parameter"}), 400
 
-    api_url = f"https://{RAPIDAPI_HOST}/get-info?url={url}"
+    try:
+        url = "https://instagram-tiktok-youtube-downloader.p.rapidapi.com/get-info"
+        querystring = {"url": video_url}
 
-    headers = {
-        "x-rapidapi-host": RAPIDAPI_HOST,
-        "x-rapidapi-key": RAPIDAPI_KEY
-    }
+        headers = {
+            "x-rapidapi-host": "instagram-tiktok-youtube-downloader.p.rapidapi.com",
+            "x-rapidapi-key": RAPIDAPI_KEY
+        }
 
-    response = requests.get(api_url, headers=headers)
-    if response.status_code != 200:
-        return jsonify({"error": "Failed to fetch from API"}), 500
+        response = requests.get(url, headers=headers, params=querystring)
+        data = response.json()
 
-    data = response.json()
-    return jsonify({"requested_format": format_type, "data": data})
+        return jsonify({"status": "success", "data": data})
 
-@app.route("/", methods=["GET"])
-def home():
-    return "YouTube/Instagram/TikTok Downloader Backend is running!"
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
