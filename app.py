@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
-import requests
-import os
+from flask_cors import CORS
+import os, requests
 
 app = Flask(__name__)
+CORS(app)  # Enable cross-origin requests
 
-# Load API key from environment variable
+# Load API key
 RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
 
 @app.route("/", methods=["GET"])
@@ -13,14 +14,14 @@ def home():
 
 @app.route("/download", methods=["POST"])
 def download():
-    body = request.get_json()
-    video_url = body.get("url")
-    format_type = body.get("format", "mp4")
-
-    if not video_url:
-        return jsonify({"error": "Missing url parameter"}), 400
-
     try:
+        body = request.get_json()
+        video_url = body.get("url")
+        format_type = body.get("format", "mp4")
+
+        if not video_url:
+            return jsonify({"error": "Missing url parameter"}), 400
+
         url = "https://instagram-tiktok-youtube-downloader.p.rapidapi.com/get-info"
         querystring = {"url": video_url, "format": format_type}
 
